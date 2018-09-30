@@ -1,12 +1,16 @@
 #coding:utf-8
 import urllib.request
-import sys
-import ssl
+import urllib.error
+import sys,ssl,getopt,xlwt,math
 from parsel import Selector
-import xlwt
-import math
 baseUrl = 'https://nj.lianjia.com/ershoufang/gulou/pg'
 wbk = xlwt.Workbook(encoding='utf-8')
+opts, args = getopt.getopt(sys.argv[1:], "h")
+for op, value in opts:
+    print(value)
+    if op == "-h":
+        print('house.py cityname districtname')
+        sys.exit()
 sheet = wbk.add_sheet("南京市鼓楼区二手房")
 colsnames = ['地址', '厅室', '面积', '朝向', '楼层', '总层数', '电梯', '装修','年代', '结构', '总价', '均价/平米']
 for index, val in enumerate(colsnames):
@@ -17,7 +21,11 @@ def getPages(page):
     for i in range(1,page):
         getData(i)
 def getData(page): 
-    data = urllib.request.urlopen('''https://nj.lianjia.com/ershoufang/gulou/pg%s/'''%(page),context = context)
+    try:
+        data = urllib.request.urlopen('''https://%s.lianjia.com/ershoufang/%s/pg%s/'''%(args[0], args[1],page),context = context)
+    except urllib.error.URLError as e:
+        print('当前网络有问题')
+        return 
     text = data.read().decode(sys.getfilesystemencoding())
     selector = Selector(text=text)
     messes = selector.css("div.info.clear").getall()
