@@ -1,1 +1,5 @@
 city.xls
+.history
+__pycache__
+*.xls
+.vscode

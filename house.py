@@ -1,21 +1,16 @@
 #coding:utf-8
 import urllib.request
 import urllib.error
-import sys,ssl,getopt,xlwt,math
+import sys, xlwt,math
 from parsel import Selector
+from tool.ssl import context
+from tool.tool import args 
 baseUrl = 'https://nj.lianjia.com/ershoufang/gulou/pg'
 wbk = xlwt.Workbook(encoding='utf-8')
-opts, args = getopt.getopt(sys.argv[1:], "h")
-for op, value in opts:
-    print(value)
-    if op == "-h":
-        print('house.py cityname districtname')
-        sys.exit()
-sheet = wbk.add_sheet("南京市鼓楼区二手房")
+sheet = wbk.add_sheet(' ')
 colsnames = ['地址', '厅室', '面积', '朝向', '楼层', '总层数', '电梯', '装修','年代', '结构', '总价', '均价/平米']
 for index, val in enumerate(colsnames):
     sheet.write(0,index,colsnames[index])
-context = ssl._create_unverified_context()
 lists = []
 def getPages(page):
     for i in range(1,page):
@@ -28,13 +23,18 @@ def getData(page):
         return 
     text = data.read().decode(sys.getfilesystemencoding())
     selector = Selector(text=text)
+    if page == 1:
+        city = selector.xpath("//div[contains(@class,'crumbs')]//a[@href='/']/text()").getall()[0]
+        disctrict = selector.xpath("//div[contains(@class,'crumbs')]//h1//a/text()").getall()[0]
+        cityname = city[city.find('网')+1:-1]
+        disctrictname = disctrict[:-3]
+        sheet.set_name('''%s市%s区二手房'''%(cityname, disctrictname))
     messes = selector.css("div.info.clear").getall()
     for mess in messes:
         Mess = Selector(mess)
         address = Mess.xpath('//div[@class="houseInfo"]/text()').getall() #地址信息
         addressName = Mess.xpath('//div[@class="houseInfo"]//a/text()').getall() #地址名
-        transAddress = address[0].strip()[1:].split('|')
-        
+        transAddress = address[len(address) - 1].strip()[1:].split('|')
         rooms = transAddress[0] #厅室
         area = transAddress[1] #面积
         dire = transAddress[2] #朝向
@@ -77,7 +77,7 @@ def write2xls(data):
         row = index + 1
         for col, name in enumerate(colsname):
             sheet.write(row, col, val[name])
-    wbk.save('city.xls') 
+    wbk.save('''%s.xls'''%(sheet.get_name())) 
 getPages(10)           
 write2xls(lists)            
 
